@@ -3,6 +3,7 @@ import numpy as np
 import os
 import tensorflow.keras.layers as layers
 import tensorflow.keras.models as models
+from tensorflow.keras.optimizers import Adam
 
 
 def build_conv_ae(dim, channels, latent_dim):
@@ -26,9 +27,9 @@ def build_conv_ae(dim, channels, latent_dim):
 		# make layers
 
 		# Conv2D(num_channels, window size, stride)
-		X = layers.Conv2D(16*2**(counter), 3, 1, padding='same')(X)
+		X = layers.Conv2D(16*2**(counter), 5, 1, padding='same')(X)
 		X = layers.Activation('relu')(X)
-		X = layers.Conv2D(16*2**(counter + 1), 3, 2, padding='same')(X)
+		X = layers.Conv2D(16*2**(counter + 1), 5, 2, padding='same')(X)
 		X = layers.Activation('relu')(X)
 		counter += 1
 		half_dim = np.ceil(half_dim / 2)
@@ -42,10 +43,10 @@ def build_conv_ae(dim, channels, latent_dim):
 	for i in range(counter):
 		X = layers.Conv2DTranspose(16*2**(counter-i), 4, 2, padding='same')(X)
 		X = layers.Activation('relu')(X)
-		X = layers.Conv2DTranspose(16*2**(counter-i-1), 3, 1, padding='same')(X)
+		X = layers.Conv2DTranspose(16*2**(counter-i-1), 5, 1, padding='same')(X)
 		X = layers.Activation('relu')(X)
 
-	X = layers.Conv2D(channels, 3, 1, padding='same')(X)
+	X = layers.Conv2D(channels, 5, 1, padding='same')(X)
 	X = layers.Activation('sigmoid')(X)
 
 	# crop layer
@@ -56,7 +57,7 @@ def build_conv_ae(dim, channels, latent_dim):
 	
 	# output layer
 	model = models.Model(input_layer, output_layer)
-	model.compile('adam', loss='MSE')
+	model.compile(Adam(5e-4), loss='MSE')
 
 	return model
 
