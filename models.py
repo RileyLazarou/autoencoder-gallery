@@ -26,26 +26,27 @@ def build_conv_ae(dim, channels, latent_dim):
 		# make layers
 
 		# Conv2D(num_channels, window size, stride)
-		X = layers.Conv2D(16*2**(counter), 3, 1)(X)
-		X = layers.activation('relu')(X)
-		X = layers.Conv2D(16*2**(counter + 1), 3, 2)(X)
-		X = layers.activation('relu')(X)
+		X = layers.Conv2D(16*2**(counter), 3, 1, padding='same')(X)
+		X = layers.Activation('relu')(X)
+		X = layers.Conv2D(16*2**(counter + 1), 3, 2, padding='same')(X)
+		X = layers.Activation('relu')(X)
 		counter += 1
 		half_dim = np.ceil(half_dim / 2)
 
 	# End of encoding
 	X = layers.Flatten()(X)
 	latent_space = layers.Dense(latent_dim)(X)
-	X = layers.Dense(half_dim * half_dim * 16*2**(counter))
+	X = layers.Dense(half_dim * half_dim * 16*2**(counter))(latent_space)
+	X = layers.Reshape((half_dim, half_dim, 16*2**(counter)))(X)
 
 	for i in range(counter):
-		X = layers.Conv2DTranspose(16*2**(counter-i), 4, 2)(X)
-		X = layers.activation('relu')(X)
-		X = layers.Conv2DTranspose(16*2**(counter-i-1), 3, 1)(X)
-		X = layers.activation('relu')(X)
+		X = layers.Conv2DTranspose(16*2**(counter-i), 4, 2, padding='same')(X)
+		X = layers.Activation('relu')(X)
+		X = layers.Conv2DTranspose(16*2**(counter-i-1), 3, 1, padding='same')(X)
+		X = layers.Activation('relu')(X)
 
-	X = layers.Conv2D(channels, 3, 1)(X)
-	X = layers.activation('sigmoid')(X)
+	X = layers.Conv2D(channels, 3, 1, padding='same')(X)
+	X = layers.Activation('sigmoid')(X)
 
 	# crop layer
 	reconstructed_dim = half_dim * 2 ** counter
@@ -68,5 +69,5 @@ def build_beta_vae():
 
 
 
- if __name__ == "__main__":
+if __name__ == "__main__":
  	pass
