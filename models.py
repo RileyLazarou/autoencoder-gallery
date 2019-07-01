@@ -56,7 +56,7 @@ def build_conv_ae(dim, channels, latent_dim):
 	
 	# output layer
 	model = models.Model(input_layer, output_layer)
-	model.compile('adam', loss='MAE')
+	model.compile('adam', loss='MSE')
 
 	return model
 
