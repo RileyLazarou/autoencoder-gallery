@@ -89,7 +89,7 @@ def test_model():
 
 if __name__ == "__main__":
 	
-	data = load_data(os.getcwd() + "/data/chinese_serif_32")
+	data = load_data(os.getcwd() + "/data/cifar10")
 
 	# dimensions, channels, latent_dim
 	model = models.build_conv_ae(data.shape[1], data.shape[-1], 32)
@@ -99,4 +99,4 @@ if __name__ == "__main__":
 	train_model(model, train)
 	reconstructed = model.predict(test)
 
-	save_result("output_char_comparison.png", test, reconstructed, invert=False)
+	save_result("output_cifar_comparison.png", test, reconstructed, invert=False)
