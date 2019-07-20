@@ -8,7 +8,7 @@ from tensorflow.keras.optimizers import Adam
 def mae(y_true, y_pred):
 	return K.mean(K.abs(y_true - y_pred))
 
-def build_conv_ae(dim, channels, latent_dim):
+def build_conv_ae(dim, channels, latent_dim, learning_rate=1e-3, loss_func=mae):
 	if dim < 16:
 		raise ValueError("Image dimensions must be at least 16x16.")
 	if channels < 1:
@@ -59,7 +59,7 @@ def build_conv_ae(dim, channels, latent_dim):
 	
 	# output layer
 	model = models.Model(input_layer, output_layer)
-	model.compile(Adam(1e-3), loss=mae)
+	model.compile(Adam(learning_rate), loss=loss_func)
 
 	return model
 
