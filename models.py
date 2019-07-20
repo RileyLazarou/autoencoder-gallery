@@ -30,25 +30,30 @@ def build_conv_ae(dim, channels, latent_dim, learning_rate=1e-3, loss_func=mae):
 
 		# Conv2D(num_channels, window size, stride)
 		X = layers.Conv2D(16*2**(counter), 3, 1, padding='same')(X)
+		X = layers.BatchNormalization()(X)
 		X = layers.Activation('relu')(X)
-		X = layers.Conv2D(16*2**(counter + 1), 3, 2, padding='same')(X)
+		X = layers.Conv2D(16*2**(counter), 3, 1, padding='same')(X)
+		X = layers.BatchNormalization()(X)
 		X = layers.Activation('relu')(X)
+		X = layers.MaxPooling2D(2, 2, padding="same")(X)
 		counter += 1
 		half_dim = np.ceil(half_dim / 2)
 
 	# End of encoding
 	X = layers.Flatten()(X)
-	latent_space = layers.Dense(latent_dim)(X)
+	latent_space = layers.Dense(latent_dim, activation="tanh")(X)
 	X = layers.Dense(half_dim * half_dim * 16*2**(counter))(latent_space)
 	X = layers.Reshape((half_dim, half_dim, 16*2**(counter)))(X)
 
 	for i in range(counter):
 		X = layers.Conv2DTranspose(16*2**(counter-i), 4, 2, padding='same')(X)
+		X = layers.BatchNormalization()(X)
 		X = layers.Activation('relu')(X)
-		X = layers.Conv2DTranspose(16*2**(counter-i-1), 3, 1, padding='same')(X)
+		X = layers.Conv2DTranspose(16*2**(counter-i), 3, 1, padding='same')(X)
+		X = layers.BatchNormalization()(X)
 		X = layers.Activation('relu')(X)
 
-	X = layers.Conv2D(channels, 3, 1, padding='same')(X)
+	X = layers.Conv2D(channels, 5, 1, padding='same')(X)
 	X = layers.Activation('sigmoid')(X)
 
 	# crop layer

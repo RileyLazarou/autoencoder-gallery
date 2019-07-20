@@ -29,7 +29,7 @@ class SaveImageCallback(Callback):
 			save_result(output_path, self.selected_images, reconstructed, self.num, self.invert)
 
 
-def train_test_split(dataX, dataY, test_p=0.2):
+def train_test_split(dataX, dataY, test_p=0.05):
 	indices = np.arange(dataX.shape[0])
 	np.random.shuffle(indices)
 	testX = dataX[indices[:int(len(dataX)*test_p)]]
