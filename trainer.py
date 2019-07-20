@@ -29,13 +29,14 @@ class SaveImageCallback(Callback):
 			save_result(output_path, self.selected_images, reconstructed, self.num, self.invert)
 
 
-def train_test_split(data, test_p=0.2):
-	full_data = np.copy(data[:])
-	indices = np.arange(full_data.shape[0])
+def train_test_split(dataX, dataY, test_p=0.2):
+	indices = np.arange(dataX.shape[0])
 	np.random.shuffle(indices)
-	test_data = full_data[indices[:int(len(full_data)*test_p)]]
-	train_data = full_data[indices[int(len(full_data)*test_p):]]
-	return train_data, test_data
+	testX = dataX[indices[:int(len(dataX)*test_p)]]
+	trainX = dataX[indices[int(len(dataX)*test_p):]]
+	testY = dataY[indices[:int(len(dataY)*test_p)]]
+	trainY = dataY[indices[int(len(dataY)*test_p):]]
+	return trainX, trainY, testX, testY
 
 def load_data(directory):
 	# Open dir and grab all PNG, assert all have same dimensions
@@ -114,10 +115,10 @@ def save_result(filename, images, reconstructed, num=10, invert=False):
 	output_image = Image.fromarray(output_image, mode=mode)
 	output_image.save(filename, mode=mode)
 
-def train_model(model, data, output_path, num, save_frequency=1, save_invert=False):
-	save_callback = SaveImageCallback(data, output_path, num, save_frequency, save_invert)
+def train_model(model, dataX, dataY, output_path, num, save_frequency=1, save_invert=False):
+	save_callback = SaveImageCallback(dataX, output_path, num, save_frequency, save_invert)
 	early_stopping = EarlyStopping(patience=5, restore_best_weights=True, min_delta=1e-4)
-	model.fit(data, data, epochs=1000, validation_split=0.2, callbacks=[early_stopping, save_callback], batch_size=128)
+	model.fit(dataX, dataY, epochs=1000, validation_split=0.2, callbacks=[early_stopping, save_callback], batch_size=128)
 
 def test_model():
 	pass
@@ -168,17 +169,30 @@ if __name__ == "__main__":
 	print("Loading dataset ", dataset_name)
 	data = load_data(data_dir)
 
-	# dimensions, channels, latent dimensions
-	model = models.build_conv_ae(data.shape[1], data.shape[-1], latent_dim, learning_rate, loss_func)
+	# NOISE GOES HERE
+	if ae_type == "dae":
+		trainX = data
+		trainY = data.copy()
 
-	train, test = train_test_split(data)
+		trainX += np.random.normal(0, 0.5, trainX.shape)
+		trainX = np.clip(trainX, 0, 1)
+		model = models.build_conv_ae(data.shape[1], data.shape[-1], latent_dim, learning_rate, loss_func)
+		trainX, trainY, testX, testY = train_test_split(trainX, trainY)
+	elif ae_type == "ae":
+		# dimensions, channels, latent dimensions
+		model = models.build_conv_ae(data.shape[1], data.shape[-1], latent_dim, learning_rate, loss_func)
+		trainX, trainY, testX, testY = train_test_split(data, data)
+		del trainY
+		del testY
+		trainY = trainX
+		testY = testX
+	else:
+		raise RuntimeError("Not implemented")
 
-	train_model(model, train, "{}/images/{}_{}.{}.png".format(new_dir, ae_type, dataset_name, '{:03d}'), OUTPUT_IMAGE_DIM, save_frequency=5)
+
+	train_model(model, trainX, trainY, "{}/images/{}_{}.{}.png".format(new_dir, ae_type, dataset_name, '{:03d}'), OUTPUT_IMAGE_DIM, save_frequency=5)
 	model.save("{}/{}_{}.h5".format(new_dir, ae_type, dataset_name))
 
-	reconstructed = model.predict(test)
-
-
+	reconstructed = model.predict(testX)
 	comparison_filename = "{}/{}_{}_comparison.png".format(new_dir, ae_type, dataset_name)
-
-	save_result(comparison_filename, test, reconstructed, num=OUTPUT_IMAGE_DIM, invert=False)
+	save_result(comparison_filename, testX, reconstructed, num=OUTPUT_IMAGE_DIM, invert=False)
